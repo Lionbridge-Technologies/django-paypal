@@ -8,3 +8,5 @@
 *.swp
 .tox
 .idea/
+*.sublime-project
+*.sublime-workspace
