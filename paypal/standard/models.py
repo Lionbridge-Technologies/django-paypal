@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from django.conf import settings
 from django.db import models
 
 from paypal.standard.helpers import duplicate_txn_id, check_secret
@@ -268,11 +269,16 @@ class PayPalStandardBase(Model):
         self._verify_postback()
         if not self.flag:
             if self.is_transaction():
+                try:
+                    SETTINGS_RECEIVER_EMAIL = settings.CURRENCY_INFO[self.mc_currency]['PAYPAL_RECEIVER_EMAIL']
+                except (AttributeError, KeyError):
+                    SETTINGS_RECEIVER_EMAIL = RECEIVER_EMAIL
+                    
                 if self.payment_status not in self.PAYMENT_STATUS_CHOICES:
                     self.set_flag("Invalid payment_status. (%s)" % self.payment_status)
                 if duplicate_txn_id(self):
                     self.set_flag("Duplicate txn_id. (%s)" % self.txn_id)
-                if self.receiver_email != RECEIVER_EMAIL:
+                if self.receiver_email != SETTINGS_RECEIVER_EMAIL:
                     self.set_flag("Invalid receiver_email. (%s)" % self.receiver_email)
                 if callable(item_check_callable):
                     flag, reason = item_check_callable(self)
