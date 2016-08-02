@@ -13,7 +13,7 @@ from paypal.standard.ipn.signals import *
 class PayPalIPNManager(models.Manager):
 
     def get_by_natural_key(self, eu_id):
-        return self.get(eu_id)
+        return self.get(eu_id=eu_id)
 
 
 class PayPalIPN(PayPalStandardBase):
