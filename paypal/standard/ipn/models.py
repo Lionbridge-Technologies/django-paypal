@@ -12,8 +12,8 @@ from paypal.standard.ipn.signals import *
 
 class PayPalIPNManager(models.Manager):
 
-    def get_by_natural_key(self, txn_id, created_at):
-        return self.get(txn_id=txn_id, created_at=created_at)
+    def get_by_natural_key(self, eu_id):
+        return self.get(eu_id)
 
 
 class PayPalIPN(PayPalStandardBase):
@@ -27,7 +27,7 @@ class PayPalIPN(PayPalStandardBase):
         verbose_name = "PayPal IPN"
 
     def natural_key(self):
-        return (self.txn_id, self.created_at)
+        return (self.eu_id, )
 
     def _postback(self):
         """Perform PayPal Postback validation."""
