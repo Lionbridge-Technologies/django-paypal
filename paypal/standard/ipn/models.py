@@ -20,6 +20,7 @@ class PayPalIPN(PayPalStandardBase):
     """Logs PayPal IPN interactions."""
     format = u"<IPN: %s %s>"
     objects = PayPalIPNManager()
+    eu_id = models.IntegerField(null=True)
 
     class Meta:
         db_table = "paypal_ipn"
