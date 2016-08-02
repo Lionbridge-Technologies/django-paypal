@@ -5,17 +5,28 @@ from __future__ import unicode_literals
 from six import b
 from six.moves.urllib.request import urlopen
 
+from django.db import models
 from paypal.standard.models import PayPalStandardBase
 from paypal.standard.ipn.signals import *
+
+
+class PayPalIPNManager(models.Manager):
+
+    def get_by_natural_key(self, txn_id, created_at):
+        return self.get(txn_id=txn_id, created_at=created_at)
 
 
 class PayPalIPN(PayPalStandardBase):
     """Logs PayPal IPN interactions."""
     format = u"<IPN: %s %s>"
+    objects = PayPalIPNManager()
 
     class Meta:
         db_table = "paypal_ipn"
         verbose_name = "PayPal IPN"
+
+    def natural_key(self):
+        return (self.txn_id, self.created_at)
 
     def _postback(self):
         """Perform PayPal Postback validation."""
