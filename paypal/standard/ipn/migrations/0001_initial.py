@@ -124,7 +124,6 @@ class Migration(migrations.Migration):
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('from_view', models.CharField(max_length=6, null=True, blank=True)),
-                ('eu_id', models.IntegerField(null=True)),
             ],
             options={
                 'db_table': 'paypal_ipn',
