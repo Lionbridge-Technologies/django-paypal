@@ -14,4 +14,4 @@ class PayPalIPNForm(PayPalStandardBaseForm):
 
     class Meta:
         model = PayPalIPN
-        exclude = []
+        exclude = ['eu_id', ]
