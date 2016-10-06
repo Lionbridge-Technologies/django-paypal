@@ -8,9 +8,6 @@
 *.swp
 .tox
 .idea/
-<<<<<<< HEAD
+docs/_build
 *.sublime-project
 *.sublime-workspace
-=======
-docs/_build
->>>>>>> 1df15d869233965cd85221615cbbaab63ff9f87d
