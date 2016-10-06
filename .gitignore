@@ -8,5 +8,9 @@
 *.swp
 .tox
 .idea/
+<<<<<<< HEAD
 *.sublime-project
 *.sublime-workspace
+=======
+docs/_build
+>>>>>>> 1df15d869233965cd85221615cbbaab63ff9f87d
