@@ -1,15 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from django.db import models
+from __future__ import unicode_literals
+
+import requests
 from django.conf import settings
+from django.db import models
 from django.http import QueryDict
-from django.utils.http import urlencode
-from six.moves.urllib.request import urlopen
 from six.moves.urllib.parse import unquote_plus
 
-from paypal.standard.models import PayPalStandardBase
 from paypal.standard.conf import POSTBACK_ENDPOINT, SANDBOX_POSTBACK_ENDPOINT
-from paypal.standard.pdt.signals import pdt_successful, pdt_failed
+from paypal.standard.models import PayPalStandardBase
+
 
 # ### Todo: Move this logic to conf.py:
 # if paypal.standard.pdt is in installed apps
@@ -45,13 +46,11 @@ class PayPalPDT(PayPalStandardBase):
         SUCCESS or FAILED.
 
         """
-        postback_dict = dict(cmd="_notify-synch", at=IDENTITY_TOKEN, tx=self.tx)
-        postback_params = urlencode(postback_dict)
-        return urlopen(self.get_endpoint(), postback_params).read()
+        return requests.post(self.get_endpoint(),
+                             data=dict(cmd="_notify-synch", at=IDENTITY_TOKEN, tx=self.tx)).content
 
     def get_endpoint(self):
-        """Use the sandbox when in DEBUG mode as we don't have a test_ipn variable in pdt."""
-        if getattr(settings, 'PAYPAL_DEBUG', settings.DEBUG):
+        if getattr(settings, 'PAYPAL_TEST', True):
             return SANDBOX_POSTBACK_ENDPOINT
         else:
             return POSTBACK_ENDPOINT
@@ -60,16 +59,12 @@ class PayPalPDT(PayPalStandardBase):
         # ### Now we don't really care what result was, just whether a flag was set or not.
         from paypal.standard.pdt.forms import PayPalPDTForm
 
-        # TODO: this needs testing and probably fixing under Python 3
-        result = False
         response_list = self.response.split('\n')
         response_dict = {}
         for i, line in enumerate(response_list):
             unquoted_line = unquote_plus(line).strip()
             if i == 0:
                 self.st = unquoted_line
-                if self.st == "SUCCESS":
-                    result = True
             else:
                 if self.st != "SUCCESS":
                     self.set_flag(line)
@@ -88,9 +83,8 @@ class PayPalPDT(PayPalStandardBase):
         pdt_form = PayPalPDTForm(qd, instance=self)
         pdt_form.save(commit=False)
 
-    def send_signals(self):
-        # Send the PDT signals...
-        if self.flag:
-            pdt_failed.send(sender=self)
-        else:
-            pdt_successful.send(sender=self)
+    def __repr__(self):
+        return '<PayPalPDT id:{0}>'.format(self.id)
+
+    def __str__(self):
+        return "PayPalPDT: {0}".format(self.id)

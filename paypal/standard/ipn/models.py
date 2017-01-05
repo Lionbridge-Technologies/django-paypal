@@ -2,12 +2,17 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+import requests
 from six import b
-from six.moves.urllib.request import urlopen
 
 from django.db import models
+
+from paypal.standard.ipn.signals import (
+    invalid_ipn_received, payment_was_flagged, payment_was_refunded, payment_was_reversed, payment_was_successful,
+    recurring_cancel, recurring_create, recurring_failed, recurring_payment, recurring_skipped, subscription_cancel,
+    subscription_eot, subscription_modify, subscription_signup, valid_ipn_received
+)
 from paypal.standard.models import PayPalStandardBase
-from paypal.standard.ipn.signals import *
 
 
 class PayPalIPNManager(models.Manager):
@@ -31,7 +36,7 @@ class PayPalIPN(PayPalStandardBase):
 
     def _postback(self):
         """Perform PayPal Postback validation."""
-        return urlopen(self.get_endpoint(), b("cmd=_notify-validate&%s" % self.query)).read()
+        return requests.post(self.get_endpoint(), data=b("cmd=_notify-validate&%s" % self.query)).content
 
     def _verify_postback(self):
         if self.response != "VERIFIED":
@@ -39,11 +44,16 @@ class PayPalIPN(PayPalStandardBase):
 
     def send_signals(self):
         """Shout for the world to hear whether a txn was successful."""
+        if self.flag:
+            invalid_ipn_received.send(sender=self)
+            payment_was_flagged.send(sender=self)
+            return
+        else:
+            valid_ipn_received.send(sender=self)
+
         # Transaction signals:
         if self.is_transaction():
-            if self.flag:
-                payment_was_flagged.send(sender=self)
-            elif self.is_refund():
+            if self.is_refund():
                 payment_was_refunded.send(sender=self)
             elif self.is_reversed():
                 payment_was_reversed.send(sender=self)
@@ -62,7 +72,7 @@ class PayPalIPN(PayPalStandardBase):
                 recurring_skipped.send(sender=self)
             elif self.is_recurring_failed():
                 recurring_failed.send(sender=self)
-       # Subscription signals:
+        # Subscription signals:
         else:
             if self.is_subscription_cancellation():
                 subscription_cancel.send(sender=self)
@@ -72,3 +82,9 @@ class PayPalIPN(PayPalStandardBase):
                 subscription_eot.send(sender=self)
             elif self.is_subscription_modified():
                 subscription_modify.send(sender=self)
+
+    def __repr__(self):
+        return '<PayPalIPN id:{0}>'.format(self.id)
+
+    def __str__(self):
+        return "PayPalIPN: {0}".format(self.id)

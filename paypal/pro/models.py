@@ -1,9 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 from django.conf import settings
 from django.db import models
-from django.utils.http import urlencode
 from django.forms.models import model_to_dict
+from django.http import QueryDict
+from django.utils.functional import cached_property
+from django.utils.http import urlencode
 
 try:
     from idmapper.models import SharedMemoryModel as Model
@@ -81,11 +85,22 @@ class PayPalNVP(Model):
         db_table = "paypal_nvp"
         verbose_name = "PayPal NVP"
 
+    @cached_property
+    def response_dict(self):
+        """
+        Returns a (MultiValueDict) dictionary containing all the parameters returned in the PayPal response.
+        """
+        # Undo the urlencode done in init
+        return QueryDict(self.response)
+
     def init(self, request, paypal_request, paypal_response):
         """Initialize a PayPalNVP instance from a HttpRequest."""
-        self.ipaddress = request.META.get('REMOTE_ADDR', '').split(':')[0]
-        if hasattr(request, "user") and request.user.is_authenticated():
-            self.user = request.user
+        if request is not None:
+            self.ipaddress = request.META.get('REMOTE_ADDR', '').split(':')[0]
+            if hasattr(request, "user") and request.user.is_authenticated():
+                self.user = request.user
+        else:
+            self.ipaddress = ''
 
         # No storing credit card info.
         query_data = dict((k, v) for k, v in paypal_request.items() if k not in self.RESTRICTED_FIELDS)
@@ -127,3 +142,9 @@ class PayPalNVP(Model):
         # Create single payment:
         else:
             return wpp.doDirectPayment(params)
+
+    def __repr__(self):
+        return '<PayPalNVP id:{0}>'.format(self.id)
+
+    def __str__(self):
+        return "PayPalNVP: {0}".format(self.id)
