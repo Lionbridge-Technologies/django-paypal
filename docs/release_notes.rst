@@ -2,9 +2,18 @@
  Release notes
 ===============
 
-Version 0.3.4 (under development)
----------------------------------
+Version 0.3.6
+-------------
 
+* Version bump due to messed up version numbers in previous release.
+
+Version 0.3.4
+-------------
+
+* Use multi certificates with PaypalEncryptedPaymentsForm
+* Fixed issue #166 - regression from 0.2.7 when using ``USE_TZ=False``
+* Django 1.11 compatibility.
+* Added warnings for untested code.
 
 Version 0.3.3
 -------------

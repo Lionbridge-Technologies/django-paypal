@@ -9,6 +9,8 @@ from django.http import QueryDict
 from django.utils.functional import cached_property
 from django.utils.http import urlencode
 
+from paypal.utils import warn_untested
+
 try:
     from idmapper.models import SharedMemoryModel as Model
 except ImportError:
@@ -71,7 +73,8 @@ class PayPalNVP(Model):
 
     # Admin fields
     user = models.ForeignKey(getattr(settings, 'AUTH_USER_MODEL', 'auth.User'),
-                             blank=True, null=True)
+                             blank=True, null=True,
+                             on_delete=models.CASCADE)
     flag = models.BooleanField(default=False, blank=True)
     flag_code = models.CharField(max_length=32, blank=True)
     flag_info = models.TextField(blank=True)
@@ -91,6 +94,7 @@ class PayPalNVP(Model):
         Returns a (MultiValueDict) dictionary containing all the parameters returned in the PayPal response.
         """
         # Undo the urlencode done in init
+        warn_untested()
         return QueryDict(self.response)
 
     def init(self, request, paypal_request, paypal_response):
@@ -98,6 +102,7 @@ class PayPalNVP(Model):
         if request is not None:
             self.ipaddress = request.META.get('REMOTE_ADDR', '').split(':')[0]
             if hasattr(request, "user") and request.user.is_authenticated():
+                warn_untested()
                 self.user = request.user
         else:
             self.ipaddress = ''
@@ -111,6 +116,7 @@ class PayPalNVP(Model):
         ack = paypal_response.get('ack', False)
         if ack != "Success":
             if ack == "SuccessWithWarning":
+                warn_untested()
                 self.flag_info = paypal_response.get('l_longmessage0', '')
             else:
                 self.set_flag(paypal_response.get('l_longmessage0', ''), paypal_response.get('l_errorcode', ''))
@@ -124,6 +130,7 @@ class PayPalNVP(Model):
 
     def process(self, request, item):
         """Do a direct payment."""
+        warn_untested()
         from paypal.pro.helpers import PayPalWPP
 
         wpp = PayPalWPP(request)

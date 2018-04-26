@@ -20,6 +20,7 @@ from paypal.pro.models import PayPalNVP
 from paypal.pro.signals import (
     payment_profile_created, payment_was_successful, recurring_cancel, recurring_reactivate, recurring_suspend
 )
+from paypal.utils import warn_untested
 
 USER = settings.PAYPAL_WPP_USER
 PASSWORD = settings.PAYPAL_WPP_PASSWORD
@@ -38,6 +39,7 @@ log = logging.getLogger('paypal.pro')
 
 def paypal_time(time_obj=None):
     """Returns a time suitable for PayPal time fields."""
+    warn_untested()
     if time_obj is None:
         time_obj = time.gmtime()
     return time.strftime(PayPalNVP.TIMESTAMP_FORMAT, time_obj)
@@ -50,7 +52,7 @@ def paypaltime2datetime(s):
         return naive
     else:
         # TIMESTAMP_FORMAT is UTC
-        return timezone.make_aware(naive, timezone.UTC())
+        return timezone.make_aware(naive, timezone.utc)
 
 
 class PayPalError(TypeError):

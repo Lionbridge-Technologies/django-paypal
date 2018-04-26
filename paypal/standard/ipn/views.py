@@ -11,8 +11,9 @@ from django.views.decorators.http import require_POST
 from paypal.standard.ipn.forms import PayPalIPNForm
 from paypal.standard.ipn.models import PayPalIPN
 from paypal.standard.models import DEFAULT_ENCODING
+from paypal.utils import warn_untested
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 CONTENT_TYPE_ERROR = ("Invalid Content-Type - PayPal is only expected to use "
                       "application/x-www-form-urlencoded. If using django's "
@@ -41,6 +42,8 @@ def ipn(request):
             'application/x-www-form-urlencoded'):
         raise AssertionError(CONTENT_TYPE_ERROR)
 
+    logger.debug("PayPal incoming POST data: %s", request.body)
+
     # Clean up the data as PayPal sends some weird values such as "N/A"
     # Also, need to cope with custom encoding, which is stored in the body (!).
     # Assuming the tolerant parsing of QueryDict and an ASCII-like encoding,
@@ -54,6 +57,7 @@ def ipn(request):
     try:
         data = QueryDict(request.body, encoding=encoding).copy()
     except LookupError:
+        warn_untested()
         data = None
         flag = "Invalid form - invalid charset"
 
@@ -91,6 +95,7 @@ def ipn(request):
     else:
         # Secrets should only be used over SSL.
         if request.is_secure() and 'secret' in request.GET:
+            warn_untested()
             ipn_obj.verify_secret(form, request.GET['secret'])
         else:
             ipn_obj.verify()
@@ -100,6 +105,6 @@ def ipn(request):
 
     if encoding_missing:
         # Wait until we have an ID to log warning
-        log.warning("No charset passed with PayPalIPN: %s. Guessing %s", ipn_obj.id, encoding)
+        logger.warning("No charset passed with PayPalIPN: %s. Guessing %s", ipn_obj.id, encoding)
 
     return HttpResponse("OKAY")

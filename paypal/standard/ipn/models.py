@@ -3,7 +3,6 @@
 from __future__ import unicode_literals
 
 import requests
-from six import b
 
 from django.db import models
 
@@ -13,6 +12,7 @@ from paypal.standard.ipn.signals import (
     subscription_eot, subscription_modify, subscription_signup, valid_ipn_received
 )
 from paypal.standard.models import PayPalStandardBase
+from paypal.utils import warn_untested
 
 
 class PayPalIPNManager(models.Manager):
@@ -36,7 +36,7 @@ class PayPalIPN(PayPalStandardBase):
 
     def _postback(self):
         """Perform PayPal Postback validation."""
-        return requests.post(self.get_endpoint(), data=b("cmd=_notify-validate&%s" % self.query)).content
+        return requests.post(self.get_endpoint(), data=b"cmd=_notify-validate&" + self.query.encode("ascii")).content
 
     def _verify_postback(self):
         if self.response != "VERIFIED":
@@ -65,6 +65,7 @@ class PayPalIPN(PayPalStandardBase):
             if self.is_recurring_create():
                 recurring_create.send(sender=self)
             elif self.is_recurring_payment():
+                warn_untested()
                 recurring_payment.send(sender=self)
             elif self.is_recurring_cancel():
                 recurring_cancel.send(sender=self)
@@ -74,6 +75,7 @@ class PayPalIPN(PayPalStandardBase):
                 recurring_failed.send(sender=self)
         # Subscription signals:
         else:
+            warn_untested()
             if self.is_subscription_cancellation():
                 subscription_cancel.send(sender=self)
             elif self.is_subscription_signup():

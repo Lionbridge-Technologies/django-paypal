@@ -7,6 +7,9 @@ Release process
 
     tox
 
+  Or check Travis, if it has run against the latest source code:
+  https://travis-ci.org/spookylukey/django-paypal
+
 * Update version numbers:
 
   * ``paypal/__init__.py``
@@ -17,7 +20,7 @@ Release process
 
 * Release to PyPI::
 
-    ./setup.py sdist bdist_wheel register upload
+    ./setup.py sdist bdist_wheel upload
 
 * Tag and push, for example.::
 
